@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "commonjs",
+    "lib": [
+      "es2018"
+    ],
+    // "rootDir": "src",
+    "outDir": "dist", //this sets the output directory for the typescript compilation
+    "declaration": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": false,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    // "skipLibCheck": true,//probably not good to add
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "src/**/*", "lib/chatStack.ts",
+    // "node_modules/@types/**/*.d.ts",
+  ],
+  "exclude": [
+    // "node_modules/**",
+    "cdk.out"
+  ]
+}
