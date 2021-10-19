@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import {ChatModel} from '../src/schemas/chatSchema';
+import {ChatModel} from './schemas/chatSchema';
 import {connect} from './mongoConnection';
 
 const mongoURI = process.env.MONGO_URI || '';
@@ -10,7 +10,7 @@ exports.handler = async (event: APIGatewayProxyEvent) => {
 
   const requestData = JSON.parse(event.body).data;
 
-  if(!JSON.parse(event.body).data) return { statusCode: 400, body: 'No chat name' };
+  if(!requestData) return { statusCode: 400, body: 'No chat name' };
 
   try {
     await connect(mongoURI);

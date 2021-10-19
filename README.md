@@ -4,6 +4,8 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-how-to-c
 
 place lambdas in root of src directory. This ensures the dependencies are packaged along with them properly when the stack is deployed
 
+All console logs are picked up under the relevant aws resource in cloudwatch (this includes all api gateway requests and not just for the lambdas)
+
 # Basic lambda with s3 bucket created using cdk
 
 The cdk stack is located in the 'lib' directory. This file is where all the definitions for the AWS resources go.
