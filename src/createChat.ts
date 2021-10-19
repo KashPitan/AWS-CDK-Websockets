@@ -1,33 +1,40 @@
-// import * as AWS from 'aws-sdk';
-// import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import mongoose from 'mongoose';
+import {ChatModel} from '../src/schemas/chatSchema';
+import {connect} from './mongoConnection';
 
 const mongoURI = process.env.MONGO_URI || '';
 
 exports.handler = async (event: APIGatewayProxyEvent) => {
-  console.log('create chat ==> 2');
+  console.log('create chat');
+  if(!event.body) return { statusCode: 400, body: 'No request data' };
 
-  // mongoose.connect(mongoURI).then(()=> {console.log('connected to mongo')}).catch((err: any) => console.log( err));
+  const requestData = JSON.parse(event.body).data;
+
+  if(!JSON.parse(event.body).data) return { statusCode: 400, body: 'No chat name' };
 
   try {
-    await mongoose.connect(mongoURI);
+    await connect(mongoURI);
     console.log('connected');
   } catch (error) {
-    console.log(error);
+    return { statusCode: 500, body: 'Failed to connect: ' + JSON.stringify(error) };
   }
 
-  // const tableName = process.env.TABLE_NAME;
+  try {
+    const newChatName = requestData.chatName;
+    const newChat = new ChatModel({
+      name: newChatName
+    });
 
-  // if (!tableName) {
-  //   throw new Error('tableName not specified in process.env.TABLE_NAME');
-  // }
+    let chat = await ChatModel.findOne({name: newChatName});
 
-  // try {
-  //   // const res = await Dynamo.put(putParams).promise();
-  // } catch (err) {
-  //   return { statusCode: 500, body: 'Failed to connect: ' + JSON.stringify(err) };
-  // }
+    if(chat){
+      return { statusCode: 400, body: 'Chat with this name already exists'};
+    }
 
-  return { statusCode: 200, body: 'Connected.' };
+    await newChat.save();
+    return { statusCode: 200, body: `Succesfully created new chat ${newChatName}`};
+
+  } catch (error) {
+    return { statusCode: 500, body: JSON.stringify(error) };
+  }
 };

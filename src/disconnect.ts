@@ -6,7 +6,6 @@ import * as AWS from 'aws-sdk';
 const Dynamo = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
 
 export const handler = async (event: APIGatewayProxyEvent) => {
-  console.log('disconnected ==> ');
 
   const tableName = process.env.TABLE_NAME;
 

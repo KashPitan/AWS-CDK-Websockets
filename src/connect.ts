@@ -8,9 +8,6 @@ const Dynamo = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
 
 
 exports.handler = async (event: APIGatewayProxyEvent) => {
-  console.log('connected ==> ');
-  // console.log(event);
-  // console.log(event.requestContext.connectionId);
 
   const tableName = process.env.TABLE_NAME;
 
@@ -24,13 +21,10 @@ exports.handler = async (event: APIGatewayProxyEvent) => {
       connectionId: event.requestContext.connectionId,
     },
   };
-  // console.log('tableName ==> ', tableName);
 
   try {
     const res = await Dynamo.put(putParams).promise();
-    // console.log(res);
   } catch (err) {
-    // console.log('err ==> ', err);
     return { statusCode: 500, body: 'Failed to connect: ' + JSON.stringify(err) };
   }
 

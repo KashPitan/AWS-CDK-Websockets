@@ -1,10 +1,10 @@
 import * as cdk from '@aws-cdk/core';
-// import MyLambda from '../MyLambda';
 import * as AWSGateway from '@aws-cdk/aws-apigatewayv2';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as AWSGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
+import * as ssm from '@aws-cdk/aws-ssm';
 
 export class ChatStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -14,6 +14,8 @@ export class ChatStack extends cdk.Stack {
       partitionKey: { name: 'connectionId', type: dynamodb.AttributeType.STRING },
       tableName: tableName,
     });
+
+    const mongoUri = ssm.StringParameter.fromStringParameterName(this,'mongoUri','kashMongoUri').stringValue;
 
     const connectionsTablePolicy = 
       new iam.PolicyStatement({
@@ -62,6 +64,9 @@ export class ChatStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_12_X,
       code: lambda.Code.fromAsset('dist'),
       handler: 'createChat.handler',
+      environment: {
+        MONGO_URI: mongoUri,
+      },
     });
 
     const defaultLambda = new lambda.Function(this, 'defaultLambda', {
