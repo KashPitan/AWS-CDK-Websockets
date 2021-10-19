@@ -1,0 +1,8 @@
+
+type Chat {
+  name: String
+}
+
+type Query{
+  getChats (): [Chat]
+}

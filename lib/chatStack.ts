@@ -5,6 +5,7 @@ import * as AWSGatewayIntegrations from '@aws-cdk/aws-apigatewayv2-integrations'
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as iam from '@aws-cdk/aws-iam';
 import * as ssm from '@aws-cdk/aws-ssm';
+import * as appsync from '@aws-cdk/aws-appsync';
 
 export class ChatStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -75,7 +76,7 @@ export class ChatStack extends cdk.Stack {
       handler: 'default.handler',
     });
 
-    //extract websocket construct to another function later
+    //extract websocket construct to another function and rename later
     const webSocketApi = new AWSGateway.WebSocketApi(this, 'messagesWebsocketApi', {
       connectRouteOptions: { integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({ handler: connectLambda }) },
       disconnectRouteOptions: { integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({ handler: disconnectLambda }) },
@@ -88,6 +89,7 @@ export class ChatStack extends cdk.Stack {
       }),
     });
     
+    //this should be a non websocket route
     webSocketApi.addRoute('createChat', {
       integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({
         handler: createChatLambda,
@@ -99,6 +101,31 @@ export class ChatStack extends cdk.Stack {
       stageName: 'dev',
       autoDeploy: true,
     });
+
+    //rename later
+    const api = new appsync.GraphqlApi(this, 'payg-service', {
+      name: `kash-graphql-api`,
+      schema: appsync.Schema.fromAsset('lib/schema.graphql'),
+      authorizationConfig: {
+        defaultAuthorization: {
+          authorizationType: appsync.AuthorizationType.IAM,
+        },
+      },
+      xrayEnabled: true,
+    });
+
+    const getChatsLambda = new lambda.Function(this, 'getChatsLambda', {
+      runtime: lambda.Runtime.NODEJS_12_X,
+      code: lambda.Code.fromAsset('dist'),
+      handler: 'get-chats.handler',
+      environment: {
+        MONGO_URI: mongoUri,
+      },
+    });
+
+    const getChatsDataSource = api.addLambdaDataSource('getChatsDataSource', getChatsLambda);
+
+    getChatsDataSource.createResolver({typeName: 'Query', fieldName: 'getChats'})
 
     connectLambda.addToRolePolicy(connectionsTablePolicy);
     disconnectLambda.addToRolePolicy(connectionsTablePolicy);
