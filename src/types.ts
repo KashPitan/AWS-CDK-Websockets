@@ -3,3 +3,13 @@ export interface getChatsQuery {
     name : string;
   }
 }
+
+export interface createChatQuery {
+  arguments : {
+    name : string;
+  }
+}
+
+export interface IChat {
+  name: string;
+}

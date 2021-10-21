@@ -1,5 +1,5 @@
 import * as AWS from 'aws-sdk';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
+// import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 
 // AWS.config.update({ region: 'eu-west-1' });

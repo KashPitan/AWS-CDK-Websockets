@@ -37,9 +37,11 @@
     "typescript": "^3.9.10"
   },
   "dependencies": {
+    "@aws-cdk/aws-appsync": "1.126.0",
+    "@aws-cdk/aws-ssm": "^1.128.0",
     "aws-sdk": "^2.1000.0",
-    "source-map-support": "^0.5.16",
     "mongoose": "^6.0.11",
+    "source-map-support": "^0.5.16",
     "uuidv4": "^6.2.12"
   }
 }

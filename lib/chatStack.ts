@@ -10,6 +10,7 @@ import * as appsync from '@aws-cdk/aws-appsync';
 export class ChatStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
     const tableName = 'WebsocketConnections';
     const table = new dynamodb.Table(this, tableName, {
       partitionKey: { name: 'connectionId', type: dynamodb.AttributeType.STRING },
@@ -61,15 +62,6 @@ export class ChatStack extends cdk.Stack {
       },
     });
 
-    const createChatLambda = new lambda.Function(this, 'createChatLambda', {
-      runtime: lambda.Runtime.NODEJS_12_X,
-      code: lambda.Code.fromAsset('dist'),
-      handler: 'createChat.handler',
-      environment: {
-        MONGO_URI: mongoUri,
-      },
-    });
-
     const defaultLambda = new lambda.Function(this, 'defaultLambda', {
       runtime: lambda.Runtime.NODEJS_12_X,
       code: lambda.Code.fromAsset('dist'),
@@ -88,13 +80,13 @@ export class ChatStack extends cdk.Stack {
         handler: messageLambda,
       }),
     });
-    
+
     //this should be a non websocket route
-    webSocketApi.addRoute('createChat', {
-      integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({
-        handler: createChatLambda,
-      }),
-    });
+    // webSocketApi.addRoute('createChat', {
+    //   integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({
+    //     handler: createChatLambda,
+    //   }),
+    // });
 
     const apiStage = new AWSGateway.WebSocketStage(this, 'DevStage', {
       webSocketApi,
@@ -123,9 +115,20 @@ export class ChatStack extends cdk.Stack {
       },
     });
 
-    const getChatsDataSource = api.addLambdaDataSource('getChatsDataSource', getChatsLambda);
+    const createChatLambda = new lambda.Function(this, 'createChatLambda', {
+      runtime: lambda.Runtime.NODEJS_12_X,
+      code: lambda.Code.fromAsset('dist'),
+      handler: 'createChat.handler',
+      environment: {
+        MONGO_URI: mongoUri,
+      },
+    });
 
-    getChatsDataSource.createResolver({typeName: 'Query', fieldName: 'getChats'})
+    const getChatsDataSource = api.addLambdaDataSource('getChatsDataSource', getChatsLambda);
+    getChatsDataSource.createResolver({typeName: 'Query', fieldName: 'getChats'});
+
+    const createChatsDataSource = api.addLambdaDataSource('createChatsDataSource', createChatLambda);
+    createChatsDataSource.createResolver({typeName: 'Mutation', fieldName: 'createChat'});
 
     connectLambda.addToRolePolicy(connectionsTablePolicy);
     disconnectLambda.addToRolePolicy(connectionsTablePolicy);
@@ -142,6 +145,6 @@ export class ChatStack extends cdk.Stack {
 
     // //try and get the context variable (from cmd line or from cdk.context.json)
     // const environment = this.node.tryGetContext('environment');
-    
+
   }
 }
