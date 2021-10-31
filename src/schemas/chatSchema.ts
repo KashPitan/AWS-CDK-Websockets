@@ -1,16 +1,26 @@
+/* eslint-disable import/prefer-default-export */
+/* eslint-disable import/no-unresolved */
+/* eslint-disable import/extensions */
 import { Schema, model } from 'mongoose';
+import { IChat } from '../types';
 
-interface Chat {
-  name: string;
-  // users: [string] | null;
-  // messages: [string]
-}
-
-const ChatSchema = new Schema<Chat>({
-  name : {type: String, required: true}
+const LocationSchema = new Schema({
+  type: {
+    type: String,
+    default: 'Point',
+  },
+  coordinates: {
+    type: [Number],
+    index: '2dsphere',
+  },
 });
 
-export const ChatModel = model<Chat>('Chat', ChatSchema);
+const ChatSchema = new Schema<IChat>({
+  name: { type: String, required: true },
+  location: LocationSchema,
+  id: { type: String, required: true },
+});
 
-// export chatModel;
+// ChatSchema.index({ location: '2dsphere' });
 
+export const ChatModel = model<IChat>('Chat', ChatSchema);

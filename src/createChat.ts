@@ -1,14 +1,18 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
-import {ChatModel} from './schemas/chatSchema';
-import {connect} from './mongoConnection';
-import {createChatQuery, IChat} from './types';
-import {Chat} from './classes/Chat';
-// import { mongo } from 'mongoose';
+/* eslint-disable import/no-unresolved */
+/* eslint-disable import/extensions */
+import { createChatQuery } from './types';
+import { Chat } from './classes/Chat';
 
 const mongoURI = process.env.MONGO_URI || '';
 
-exports.handler = async (event: createChatQuery) : Promise<IChat> => {
-  const newChat = new Chat(event.arguments.name);
-  await newChat.createChat(mongoURI);
+exports.handler = async (event: createChatQuery) : Promise<Chat> => {
+  const newChat = await Chat.createChat(
+    mongoURI,
+    event.arguments.name,
+    {
+      longitude: event.arguments.location.longitude,
+      latitude: event.arguments.location.latitude,
+    },
+  );
   return newChat;
 };

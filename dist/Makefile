@@ -23,6 +23,3 @@ clean:
 	rm ./test/cdk-practice.test.d.ts
 	rm ./test/cdk-practice.test.js
 
-deploy:
-	./node_modules/.bin/cdk deploy -r  $(CI_DEPLOYMENT_ROLE_ARN) --force --require-approval never --context environment=$(ENVIRONMENT)
-.PHONY: deploy

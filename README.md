@@ -1,6 +1,7 @@
 # web socket chat notes to self
 
 https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-how-to-call-websocket-api-wscat.html
+https://stackoverflow.com/questions/32196916/geonear-is-not-working-mongodb
 
 place lambdas in root of src directory. This ensures the dependencies are packaged along with them properly when the stack is deployed
 

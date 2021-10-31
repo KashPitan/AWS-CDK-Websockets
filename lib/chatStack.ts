@@ -1,3 +1,6 @@
+/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable max-len */
+/* eslint-disable import/prefer-default-export */
 import * as cdk from '@aws-cdk/core';
 import * as AWSGateway from '@aws-cdk/aws-apigatewayv2';
 import * as lambda from '@aws-cdk/aws-lambda';
@@ -11,35 +14,30 @@ export class ChatStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const tableName = 'WebsocketConnections';
+    const tableName = 'WebsocketConnections4';
     const table = new dynamodb.Table(this, tableName, {
+      // sortKey: { name: 'chatId', type: dynamodb.AttributeType.STRING },
       partitionKey: { name: 'connectionId', type: dynamodb.AttributeType.STRING },
-      tableName: tableName,
+      tableName,
     });
 
-    const mongoUri = ssm.StringParameter.fromStringParameterName(this,'mongoUri','kashMongoUri').stringValue;
+    const mongoUri = ssm.StringParameter.fromStringParameterName(this, 'mongoUri', 'kashMongoUri').stringValue;
 
-    const connectionsTablePolicy = 
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:UpdateItem','dynamodb:DeleteItem','dynamodb:Scan'],
-        resources: [table.tableArn],
-      });
+    const connectionsTablePolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:UpdateItem', 'dynamodb:DeleteItem', 'dynamodb:Scan'],
+      resources: [table.tableArn],
+    });
 
     const connectLambda = new lambda.Function(this, 'connectLambda', {
       runtime: lambda.Runtime.NODEJS_12_X,
-      code: lambda.Code.fromAsset('dist'), 
+      code: lambda.Code.fromAsset('dist'),
       handler: 'connect.handler',
       initialPolicy: [connectionsTablePolicy],
       environment: {
         TABLE_NAME: tableName,
       },
     });
-
-    // const lambdaRole = new iam.Role(this, `lambdaRole`, {
-    //   roleName: `lambdaRole`,
-    //   assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-    // });
 
     const disconnectLambda = new lambda.Function(this, 'disconnectLambda', {
       runtime: lambda.Runtime.NODEJS_12_X,
@@ -49,7 +47,6 @@ export class ChatStack extends cdk.Stack {
       environment: {
         TABLE_NAME: tableName,
       },
-      // role: lambdaRole
     });
 
     const messageLambda = new lambda.Function(this, 'messageLambda', {
@@ -62,17 +59,10 @@ export class ChatStack extends cdk.Stack {
       },
     });
 
-    const defaultLambda = new lambda.Function(this, 'defaultLambda', {
-      runtime: lambda.Runtime.NODEJS_12_X,
-      code: lambda.Code.fromAsset('dist'),
-      handler: 'default.handler',
-    });
-
-    //extract websocket construct to another function and rename later
+    // extract websocket construct to another function and rename later
     const webSocketApi = new AWSGateway.WebSocketApi(this, 'messagesWebsocketApi', {
       connectRouteOptions: { integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({ handler: connectLambda }) },
       disconnectRouteOptions: { integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({ handler: disconnectLambda }) },
-      defaultRouteOptions: { integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({ handler: defaultLambda }) },
     });
 
     webSocketApi.addRoute('message', {
@@ -81,35 +71,38 @@ export class ChatStack extends cdk.Stack {
       }),
     });
 
-    //this should be a non websocket route
-    // webSocketApi.addRoute('createChat', {
-    //   integration: new AWSGatewayIntegrations.LambdaWebSocketIntegration({
-    //     handler: createChatLambda,
-    //   }),
-    // });
-
     const apiStage = new AWSGateway.WebSocketStage(this, 'DevStage', {
       webSocketApi,
       stageName: 'dev',
       autoDeploy: true,
     });
 
-    //rename later
-    const api = new appsync.GraphqlApi(this, 'payg-service', {
-      name: `kash-graphql-api`,
+    // rename later
+    const api = new appsync.GraphqlApi(this, 'chat-service', {
+      name: 'kash-graphql-api',
       schema: appsync.Schema.fromAsset('lib/schema.graphql'),
       authorizationConfig: {
         defaultAuthorization: {
-          authorizationType: appsync.AuthorizationType.IAM,
+          // authorizationType: appsync.AuthorizationType.IAM,
+          authorizationType: appsync.AuthorizationType.API_KEY,
         },
       },
       xrayEnabled: true,
     });
 
-    const getChatsLambda = new lambda.Function(this, 'getChatsLambda', {
+    const getNearChatsLambda = new lambda.Function(this, 'getNearChatsLambda', {
       runtime: lambda.Runtime.NODEJS_12_X,
       code: lambda.Code.fromAsset('dist'),
-      handler: 'get-chats.handler',
+      handler: 'getNearChats.handler',
+      environment: {
+        MONGO_URI: mongoUri,
+      },
+    });
+
+    const getAllChatsLambda = new lambda.Function(this, 'getAllChatsLambda', {
+      runtime: lambda.Runtime.NODEJS_12_X,
+      code: lambda.Code.fromAsset('dist'),
+      handler: 'getAllChats.handler',
       environment: {
         MONGO_URI: mongoUri,
       },
@@ -124,11 +117,14 @@ export class ChatStack extends cdk.Stack {
       },
     });
 
-    const getChatsDataSource = api.addLambdaDataSource('getChatsDataSource', getChatsLambda);
-    getChatsDataSource.createResolver({typeName: 'Query', fieldName: 'getChats'});
+    const getNearChatsDataSource = api.addLambdaDataSource('getNearChatsDataSource', getNearChatsLambda);
+    getNearChatsDataSource.createResolver({ typeName: 'Query', fieldName: 'getNearChats' });
+
+    const getAllChatsLambdaDataSource = api.addLambdaDataSource('getChatsDataSource', getAllChatsLambda);
+    getAllChatsLambdaDataSource.createResolver({ typeName: 'Query', fieldName: 'getAllChats' });
 
     const createChatsDataSource = api.addLambdaDataSource('createChatsDataSource', createChatLambda);
-    createChatsDataSource.createResolver({typeName: 'Mutation', fieldName: 'createChat'});
+    createChatsDataSource.createResolver({ typeName: 'Mutation', fieldName: 'createChat' });
 
     connectLambda.addToRolePolicy(connectionsTablePolicy);
     disconnectLambda.addToRolePolicy(connectionsTablePolicy);
@@ -140,11 +136,10 @@ export class ChatStack extends cdk.Stack {
     });
 
     messageLambda.addToRolePolicy(
-      new iam.PolicyStatement({ actions: ['execute-api:ManageConnections'], resources: [connectionsArns] })
+      new iam.PolicyStatement({ actions: ['execute-api:ManageConnections'], resources: [connectionsArns] }),
     );
 
     // //try and get the context variable (from cmd line or from cdk.context.json)
     // const environment = this.node.tryGetContext('environment');
-
   }
 }

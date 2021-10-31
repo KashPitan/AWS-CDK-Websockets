@@ -1,11 +1,24 @@
+type Location {
+  latitude: Float
+  longitude: Float
+}
+
+input LocationInput {
+  latitude: Float
+  longitude: Float
+}
+
 type Chat {
   name: String
+  location: Location
+  id: String
 }
 
 type Query {
-  getChats(removeMeImAFiller: String): [Chat]
+  getAllChats(filler: String): [Chat]
+  getNearChats(location: LocationInput): [Chat]
 }
 
 type Mutation {
-  createChat(name: String): Chat
+  createChat(name: String, location: LocationInput): Chat
 }
